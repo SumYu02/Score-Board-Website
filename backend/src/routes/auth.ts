@@ -17,9 +17,17 @@ router.post("/register", async (req: Request, res: Response) => {
       });
     }
 
-    if (password.length < 8) {
+    // Username validation: no symbols allowed (only letters, numbers, and underscores)
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
       return res.status(400).json({
-        error: "Password must be at least 8 characters long",
+        error:
+          "Username must not contain symbols (only letters, numbers, and underscores allowed)",
+      });
+    }
+
+    if (password.length < 7) {
+      return res.status(400).json({
+        error: "Password must be at least 7 characters long",
       });
     }
 
