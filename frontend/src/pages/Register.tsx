@@ -17,6 +17,7 @@ import { Input, Label, Navbar } from "../components";
 import { Eye, EyeOff } from "lucide-react";
 import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
 const formSchema = z
   .object({
@@ -72,12 +73,17 @@ export function Register() {
   const registerMutation = useMutation({
     mutationFn: authService.register,
     onSuccess: (data) => {
+      toast.success("Registration successful!");
       setAuth(data.user, data.token);
-      navigate("/");
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     },
     onError: (error: any) => {
       console.error("Registration error:", error);
-      // Error will be handled by the form
+      toast.error(
+        error.response?.data?.error || "Registration failed. Please try again."
+      );
     },
   });
 

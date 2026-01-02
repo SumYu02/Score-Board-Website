@@ -16,6 +16,10 @@ import {
 import { Input, Label, Navbar } from "../components";
 import { authService } from "@/services/authService";
 import { useAuthStore } from "@/store/authStore";
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
+
+import { toast } from "sonner";
 
 const loginSchema = z.object({
   email: z.string().email("Invalid email address"),
@@ -28,6 +32,11 @@ export function Login() {
   const navigate = useNavigate();
   const setAuth = useAuthStore((state) => state.setAuth);
 
+  const [showPassword, setShowPassword] = useState(false);
+
+  const togglePassword = () => {
+    setShowPassword(!showPassword);
+  };
   const {
     control,
     handleSubmit,
@@ -44,11 +53,15 @@ export function Login() {
     mutationFn: authService.login,
     onSuccess: (data) => {
       setAuth(data.user, data.token);
-      navigate("/");
+      toast.success("Login successful!");
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
     },
     onError: (error: any) => {
-      console.error("Login error:", error);
-      // Error will be handled by the form
+      toast.error(
+        error.response?.data?.error || "Login failed. Please try again."
+      );
     },
   });
 
@@ -88,7 +101,7 @@ export function Login() {
                         {...field}
                       />
                       {errors.email && (
-                        <p className="text-sm text-destructive">
+                        <p className="text-xs text-destructive">
                           {errors.email.message}
                         </p>
                       )}
@@ -98,10 +111,24 @@ export function Login() {
                 <Controller
                   control={control}
                   name="password"
+                  rules={{
+                    required: {
+                      value: true,
+                      message: "Password is required",
+                    },
+                  }}
                   render={({ field }) => (
                     <div className="grid gap-2">
                       <div className="flex items-center">
                         <Label htmlFor="password">Password</Label>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={togglePassword}
+                          type="button"
+                        >
+                          {showPassword ? <Eye /> : <EyeOff />}
+                        </Button>
                         <a
                           href="#"
                           className="ml-auto inline-block text-sm underline-offset-4 hover:underline"
@@ -109,21 +136,19 @@ export function Login() {
                           Forgot your password?
                         </a>
                       </div>
-                      <Input id="password" type="password" {...field} />
+                      <Input
+                        id="password"
+                        type={showPassword ? "text" : "password"}
+                        {...field}
+                      />
                       {errors.password && (
-                        <p className="text-sm text-destructive">
+                        <p className="text-xs text-destructive">
                           {errors.password.message}
                         </p>
                       )}
                     </div>
                   )}
                 />
-                {loginMutation.isError && (
-                  <p className="text-sm text-destructive">
-                    {loginMutation.error?.response?.data?.error ||
-                      "Login failed. Please try again."}
-                  </p>
-                )}
               </div>
               <CardFooter className="flex-col gap-2 px-0 pt-6">
                 <Button
