@@ -8,11 +8,12 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Navbar } from "@/components/Navbar";
+import { Input, Label, Navbar } from "../components";
+import { useNavigate } from "react-router-dom";
 
 export function Login() {
+  const navigate = useNavigate();
+
   return (
     <>
       <Navbar />
@@ -24,7 +25,9 @@ export function Login() {
               Enter your email below to login to your account
             </CardDescription>
             <CardAction>
-              <Button variant="link">Sign Up</Button>
+              <Button variant="link" onClick={() => navigate("/register")}>
+                Sign Up
+              </Button>
             </CardAction>
           </CardHeader>
           <CardContent>
