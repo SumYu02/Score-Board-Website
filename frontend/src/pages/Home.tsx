@@ -3,10 +3,13 @@ import { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import { Table } from "@/components/Table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CircleChevronDown } from "lucide-react";
+import { CircleChevronDown, Rocket } from "lucide-react";
 import Github from "@/components/Github";
+import { Button } from "@/components/ui/button";
+import { useNavigate } from "react-router-dom";
 
 export function Home() {
+  const navigate = useNavigate();
   const [displayed, setDisplayed] = useState("");
   const [displayedSubtitle, setDisplayedSubtitle] = useState("");
 
@@ -88,6 +91,14 @@ export function Home() {
         <Card className="w-full">
           <CardHeader>
             <CardTitle className="text-2xl font-bold">Leaderboard</CardTitle>
+
+            <Button
+              variant="link"
+              onClick={() => navigate("/game")}
+              className="text-primary  animate-pulse"
+            >
+              <Rocket className="size-4" /> Play Game
+            </Button>
           </CardHeader>
           <CardContent>
             <Table />

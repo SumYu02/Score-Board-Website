@@ -1,17 +1,23 @@
-import { Router } from 'express';
-import { authenticateToken } from '../middleware/auth.js';
-import * as scoreController from '../../controller/score_controller.js';
+import { Router } from "express";
+import { authenticateToken } from "../middleware/auth.js";
+import * as scoreController from "../../controller/score_controller.js";
 
 const router = Router();
 
 // Update score endpoint (protected)
-router.post('/update', authenticateToken, scoreController.updateScore);
+router.post("/update", authenticateToken, scoreController.updateScore);
 
 // Get top 10 users endpoint
-router.get('/leaderboard', scoreController.getLeaderboard);
+router.get("/leaderboard", scoreController.getLeaderboard);
 
 // Get current user's score
-router.get('/me', authenticateToken, scoreController.getCurrentUserScore);
+router.get("/me", authenticateToken, scoreController.getCurrentUserScore);
+
+// Submit typing game score (protected, with validation)
+router.post(
+  "/typing-game",
+  authenticateToken,
+  scoreController.submitTypingGameScore
+);
 
 export default router;
-
