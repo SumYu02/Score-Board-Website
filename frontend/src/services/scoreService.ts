@@ -64,10 +64,7 @@ export const scoreService = {
     );
     return response.data;
   },
-  getCurrentUserScore: async (): Promise<CurrentUserScoreResponse> => {
-    const response = await api.get<CurrentUserScoreResponse>("/api/score/me");
-    return response.data;
-  },
+
   submitScore: async (
     action: string = "TYPING_GAME"
   ): Promise<SubmitScoreResponse> => {
@@ -83,6 +80,10 @@ export const scoreService = {
       "/api/score/typing-game",
       stats
     );
+    return response.data;
+  },
+  getCurrentUserScore: async (): Promise<CurrentUserScoreResponse> => {
+    const response = await api.get<CurrentUserScoreResponse>("/api/score/me");
     return response.data;
   },
 };
