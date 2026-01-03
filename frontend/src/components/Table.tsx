@@ -98,16 +98,16 @@ export const Table = () => {
                         )}
                       </>
                     ) : (
-                      <span className="text-muted-foreground">N/A</span>
+                      <span className="text-muted-foreground">-</span>
                     )}
                   </TableCell>
 
                   <TableCell className="text-muted-foreground">
-                    {entry?.email ?? "N/A"}
+                    {entry?.email ?? "-"}
                   </TableCell>
 
                   <TableCell className="text-right font-semibold">
-                    {entry?.score ?? "N/A"}
+                    {entry?.score ?? "-"}
                   </TableCell>
                 </TableRow>
               );

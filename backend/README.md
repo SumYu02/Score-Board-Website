@@ -57,6 +57,7 @@ npm start
 ### Authentication
 
 - `POST /api/auth/register` - Register a new user
+
   - Body: `{ username, email, password }`
   - Returns: `{ user, token }`
 
@@ -67,11 +68,13 @@ npm start
 ### Score Management
 
 - `POST /api/score/update` - Update user score (Protected - requires JWT)
+
   - Headers: `Authorization: Bearer <token>`
   - Body: `{ action?: string }` (optional)
   - Returns: `{ user, message }`
 
 - `GET /api/score/leaderboard` - Get top 10 users
+
   - Returns: `{ leaderboard: User[] }`
 
 - `GET /api/score/me` - Get current user's score (Protected - requires JWT)
@@ -97,4 +100,3 @@ The token is returned when registering or logging in and is valid for 7 days.
 
 - **User**: Stores user information, scores, and authentication data
 - **ActionLog**: Logs all score update actions for audit purposes
-

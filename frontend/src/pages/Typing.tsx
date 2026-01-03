@@ -51,6 +51,9 @@ export function Typing() {
   const [isLoadingText, setIsLoadingText] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  // Track persistent stats for current word (don't decrease on deletion)
+  const maxCurrentWordLengthRef = useRef<number>(0);
+  const maxCurrentWordMistakesRef = useRef<number>(0);
 
   // Fetch random text from backend
   const fetchRandomText = useCallback(async () => {
@@ -88,6 +91,8 @@ export function Typing() {
     setTimeLeft(GAME_DURATION);
     setWordIndex(0);
     setWordStats([]);
+    maxCurrentWordLengthRef.current = 0;
+    maxCurrentWordMistakesRef.current = 0;
     setStats({
       wordsTyped: 0,
       totalCharactersTyped: 0,
@@ -136,23 +141,41 @@ export function Typing() {
     // Calculate current word stats
     const currentWordLength = value.length;
     let currentWordCorrect = 0;
+    let currentWordMistakes = 0;
+
+    // Track mistakes - count incorrect characters typed
     for (let i = 0; i < value.length; i++) {
       if (value[i] === currentText[i]) {
         currentWordCorrect++;
+      } else {
+        currentWordMistakes++;
       }
     }
 
+    // Update persistent max values (never decrease, even on deletion)
+    if (currentWordLength > maxCurrentWordLengthRef.current) {
+      maxCurrentWordLengthRef.current = currentWordLength;
+    }
+    if (currentWordMistakes > maxCurrentWordMistakesRef.current) {
+      maxCurrentWordMistakesRef.current = currentWordMistakes;
+    }
+
     // Calculate total stats (including all previous words)
+    // Use persistent max values for current word to prevent accuracy from going back up on deletion
+    const persistentCurrentWordLength = maxCurrentWordLengthRef.current;
+    const persistentCurrentWordCorrect =
+      persistentCurrentWordLength - maxCurrentWordMistakesRef.current;
+
     const totalCharsTyped =
       stats.totalCharactersTyped -
       stats.currentWordCharactersTyped +
-      currentWordLength;
+      persistentCurrentWordLength;
     const totalCharsCorrect =
       stats.totalCharactersCorrect -
       stats.currentWordCharactersCorrect +
-      currentWordCorrect;
+      persistentCurrentWordCorrect;
 
-    // Calculate average accuracy across all completed words + current word
+    // Calculate accuracy based on current word only: (Correct Characters / Total Characters Typed) × 100
     const timeElapsed = GAME_DURATION - timeLeft;
     const minutesElapsed = timeElapsed / 60;
 
@@ -160,18 +183,20 @@ export function Typing() {
     const wpm =
       minutesElapsed > 0 ? Math.round(totalCharsTyped / 5 / minutesElapsed) : 0;
 
-    // Calculate average accuracy: (total correct / total typed) * 100
+    // Calculate accuracy using persistent values (mistakes persist even after deletion)
     const accuracy =
-      totalCharsTyped > 0
-        ? Math.round((totalCharsCorrect / totalCharsTyped) * 100)
+      persistentCurrentWordLength > 0
+        ? Math.round(
+            (persistentCurrentWordCorrect / persistentCurrentWordLength) * 100
+          )
         : 0;
 
     const newStats: GameStats = {
       wordsTyped: stats.wordsTyped,
       totalCharactersTyped: totalCharsTyped,
       totalCharactersCorrect: totalCharsCorrect,
-      currentWordCharactersTyped: currentWordLength,
-      currentWordCharactersCorrect: currentWordCorrect,
+      currentWordCharactersTyped: persistentCurrentWordLength,
+      currentWordCharactersCorrect: persistentCurrentWordCorrect,
       wpm,
       accuracy,
     };
@@ -180,13 +205,16 @@ export function Typing() {
 
     // Check if text is completed
     if (value === currentText) {
-      // Save stats for this completed word
+      // Save stats for this completed word using persistent values
       const completedWordStats: WordStats = {
-        charactersTyped: currentWordLength,
-        charactersCorrect: currentWordCorrect,
+        charactersTyped: persistentCurrentWordLength,
+        charactersCorrect: persistentCurrentWordCorrect,
         accuracy:
-          currentWordLength > 0
-            ? Math.round((currentWordCorrect / currentWordLength) * 100)
+          persistentCurrentWordLength > 0
+            ? Math.round(
+                (persistentCurrentWordCorrect / persistentCurrentWordLength) *
+                  100
+              )
             : 0,
       };
 
@@ -196,6 +224,10 @@ export function Typing() {
       // Move to next word - fetch new text from backend
       const newWordIndex = wordIndex + 1;
       setWordIndex(newWordIndex);
+
+      // Reset persistent tracking for new word
+      maxCurrentWordLengthRef.current = 0;
+      maxCurrentWordMistakesRef.current = 0;
 
       // Update stats with completed word count before fetching new text
       const statsWithCompletedWord = {
@@ -267,6 +299,8 @@ export function Typing() {
       setTimeLeft(GAME_DURATION);
       setWordIndex(0);
       setWordStats([]);
+      maxCurrentWordLengthRef.current = 0;
+      maxCurrentWordMistakesRef.current = 0;
       setStats({
         wordsTyped: 0,
         totalCharactersTyped: 0,
@@ -385,7 +419,7 @@ export function Typing() {
                           {stats.wordsTyped}
                         </div>
                         <div className="text-xs text-muted-foreground">
-                          Words
+                          Sentences
                         </div>
                       </div>
                     </div>
@@ -431,7 +465,7 @@ export function Typing() {
               </Card>
 
               {/* Keyboard Visualization */}
-              <Card>
+              <Card className="hidden sm:block">
                 <CardHeader>
                   <CardTitle>Keyboard</CardTitle>
                 </CardHeader>

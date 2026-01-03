@@ -62,7 +62,7 @@ export function Home() {
     <div className="w-full min-h-screen bg-background flex flex-col">
       <Navbar />
 
-      <div className="min-h-[calc(70vh)] sm:min-h-[calc(100vh-64px)] flex flex-col items-center justify-between sm:justify-center w-full max-w-4xl mx-auto  ">
+      <div className="min-h-[calc(80vh)] sm:min-h-[calc(100vh-64px)] flex flex-col items-center justify-between sm:justify-center w-full max-w-4xl mx-auto  ">
         <div className="flex-1 flex flex-col items-center justify-center gap-4 sm:gap-6 ">
           <p className="text-4xl sm:text-5xl font-bold text-foreground text-center">
             {displayed}
@@ -96,7 +96,7 @@ export function Home() {
       {/* Leaderboard Section */}
       <div
         id="leaderboard"
-        className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-8 py-16 gap-8"
+        className="min-h-screen flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-8 py-16 gap-8"
       >
         <Card className="w-full">
           <CardHeader>
