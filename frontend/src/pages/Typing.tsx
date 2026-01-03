@@ -138,7 +138,8 @@ export function Typing() {
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (gameState !== "playing" && gameState !== "ready") return;
+    // Only allow input when actively playing, not in ready state
+    if (gameState !== "playing") return;
 
     const value = e.target.value;
     setUserInput(value);
@@ -262,6 +263,8 @@ export function Typing() {
     // Start timer when Enter is pressed in "ready" state
     if (e.key === "Enter" && gameState === "ready") {
       e.preventDefault();
+      // Clear any input that might have been prefilled
+      setUserInput("");
       setGameState("playing");
       startTimer();
     }
@@ -277,6 +280,8 @@ export function Typing() {
     // Start timer when Enter is pressed in "ready" state
     if (e.key === "Enter" && gameState === "ready") {
       e.preventDefault();
+      // Clear any input that might have been prefilled
+      setUserInput("");
       setGameState("playing");
       startTimer();
     }
@@ -438,7 +443,8 @@ export function Typing() {
                     placeholder="Press Enter to start..."
                     className="text-lg sm:text-xl font-mono"
                     autoFocus
-                    disabled={gameState !== "ready"}
+                    disabled={gameState !== "ready" && gameState !== "playing"}
+                    readOnly={gameState === "ready"}
                   />
                   <p className="text-sm text-muted-foreground mt-2 text-center">
                     Press{" "}
