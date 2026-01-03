@@ -80,7 +80,7 @@ export function History() {
                       <TableHead>Date</TableHead>
                       <TableHead>WPM</TableHead>
                       <TableHead>Accuracy</TableHead>
-                      <TableHead>Words Typed</TableHead>
+                      <TableHead>Sentences Typed</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
