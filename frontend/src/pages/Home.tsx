@@ -14,7 +14,7 @@ export function Home() {
   const [displayedSubtitle, setDisplayedSubtitle] = useState("");
 
   const title = "Welcome to the Score Board";
-  const subtitle = "This is a simple typing game.";
+  const subtitle = `This is a simple typing game.`;
 
   useEffect(() => {
     let titleIndex = 0;
@@ -69,8 +69,18 @@ export function Home() {
             <span className="ml-1 animate-pulse">|</span>
           </p>
           {displayed === title && (
-            <p className="text-xl sm:text-2xl text-muted-foreground text-center">
+            <p
+              className="text-xl sm:text-2xl text-muted-foreground text-center cursor-pointer"
+              onClick={() => navigate("/game")}
+            >
               {displayedSubtitle}
+              <Button
+                variant="link"
+                onClick={() => navigate("/game")}
+                className="text-primary  animate-pulse cursor-pointer "
+              >
+                <Rocket className="size-6 " />
+              </Button>
             </p>
           )}
         </div>

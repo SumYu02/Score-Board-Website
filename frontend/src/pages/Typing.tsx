@@ -470,7 +470,7 @@ export function Typing() {
                       {stats.wordsTyped}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
-                      Words
+                      Sentences
                     </div>
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
