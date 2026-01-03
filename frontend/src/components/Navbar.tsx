@@ -1,6 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import { Button } from "./ui/button";
-import { Moon, Sun, Key, User, LogOut, Gamepad2 } from "lucide-react";
+import { Moon, Sun, Key, User, LogOut, Gamepad2, History } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
@@ -163,16 +163,25 @@ export function Navbar() {
                     </CardContent>
                   </Card>
                 </div>
-                <DrawerFooter>
+                <DrawerFooter className="flex flex-col gap-2">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      navigate("/history");
+                    }}
+                    className="p-5 w-full"
+                  >
+                    <History className="h-4 w-4 mr-2" /> View History
+                  </Button>
                   <Button
                     variant="outline"
                     onClick={() => {
                       useAuthStore.getState().logout();
                       navigate("/login");
                     }}
-                    className="p-5"
+                    className="p-5 w-full"
                   >
-                    <LogOut className="h-4 w-4" /> Logout
+                    <LogOut className="h-4 w-4 mr-2" /> Logout
                   </Button>
                 </DrawerFooter>
               </DrawerContent>

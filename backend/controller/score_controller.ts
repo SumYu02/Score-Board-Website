@@ -192,7 +192,9 @@ export async function submitTypingGameScore(
     const recentSubmission = await prisma.actionLog.findFirst({
       where: {
         userId,
-        action: "TYPING_GAME",
+        action: {
+          startsWith: "TYPING_GAME:",
+        },
         createdAt: {
           gte: new Date(Date.now() - 5000), // Last 5 seconds
         },
@@ -257,6 +259,57 @@ export async function submitTypingGameScore(
     });
   } catch (error) {
     console.error("Typing game score submission error:", error);
+    res.status(500).json({ error: "Internal server error" });
+  }
+}
+
+export async function getTypingGameHistory(
+  req: Request,
+  res: Response
+): Promise<void> {
+  try {
+    const userId = req.user!.userId;
+
+    // Get all action logs for typing games
+    const actionLogs = await prisma.actionLog.findMany({
+      where: {
+        userId,
+        action: {
+          startsWith: "TYPING_GAME:",
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
+      take: 100, // Limit to last 100 games
+    });
+
+    // Parse action logs to extract game data
+    const history = actionLogs
+      .map((log) => {
+        // Parse format: TYPING_GAME:${wpm}WPM:${accuracy}%:${wordsTyped}words
+        const match = log.action.match(
+          /TYPING_GAME:(\d+(?:\.\d+)?)WPM:(\d+(?:\.\d+)?)%:(\d+)words/
+        );
+        if (!match) {
+          return null;
+        }
+
+        return {
+          id: log.id,
+          date: log.createdAt,
+          wpm: parseFloat(match[1]),
+          accuracy: parseFloat(match[2]),
+          wordsTyped: parseInt(match[3], 10),
+        };
+      })
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    res.json({
+      history,
+    });
+  } catch (error) {
+    console.error("Get typing game history error:", error);
     res.status(500).json({ error: "Internal server error" });
   }
 }

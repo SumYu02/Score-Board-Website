@@ -20,4 +20,11 @@ router.post(
   scoreController.submitTypingGameScore
 );
 
+// Get typing game history (protected)
+router.get(
+  "/typing-game/history",
+  authenticateToken,
+  scoreController.getTypingGameHistory
+);
+
 export default router;
