@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 interface KeyboardProps {
   pressedKey: string | null;
@@ -29,6 +30,7 @@ const KEY_WIDTHS: Record<string, string> = {
 
 export function Keyboard({ pressedKey, className }: KeyboardProps) {
   const [currentActiveKey, setCurrentActiveKey] = useState<string | null>(null);
+  const [isVisible, setIsVisible] = useState(true);
 
   useEffect(() => {
     if (pressedKey) {
@@ -87,35 +89,48 @@ export function Keyboard({ pressedKey, className }: KeyboardProps) {
 
   return (
     <div className={cn("w-full max-w-4xl mx-auto", className)}>
-      <div className="bg-muted/50 rounded-lg p-4 border">
-        <div className="flex flex-col gap-2">
-          {KEYBOARD_LAYOUT.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex gap-1 justify-center">
-              {row.map((key) => {
-                const isActive = isKeyActive(key);
-                const width = KEY_WIDTHS[key] || "w-[50px]";
-                
-                return (
-                  <div
-                    key={key}
-                    className={cn(
-                      "h-12 flex items-center justify-center rounded-md",
-                      "text-sm font-medium transition-all duration-150",
-                      "border border-border",
-                      width,
-                      isActive
-                        ? "bg-primary text-primary-foreground scale-105 shadow-lg border-primary"
-                        : "bg-background text-foreground hover:bg-muted"
-                    )}
-                  >
-                    {getKeyDisplay(key)}
-                  </div>
-                );
-              })}
-            </div>
-          ))}
-        </div>
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="text-sm font-medium text-foreground">Keyboard Visualization</h3>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => setIsVisible(!isVisible)}
+          className="h-8"
+        >
+          {isVisible ? "Hide Keyboard" : "Show Keyboard"}
+        </Button>
       </div>
+      {isVisible && (
+        <div className="bg-muted/50 rounded-lg p-4 border">
+          <div className="flex flex-col gap-2">
+            {KEYBOARD_LAYOUT.map((row, rowIndex) => (
+              <div key={rowIndex} className="flex gap-1 justify-center">
+                {row.map((key) => {
+                  const isActive = isKeyActive(key);
+                  const width = KEY_WIDTHS[key] || "w-[50px]";
+                  
+                  return (
+                    <div
+                      key={key}
+                      className={cn(
+                        "h-12 flex items-center justify-center rounded-md",
+                        "text-sm font-medium transition-all duration-150",
+                        "border border-border",
+                        width,
+                        isActive
+                          ? "bg-primary text-primary-foreground scale-105 shadow-lg border-primary"
+                          : "bg-background text-foreground hover:bg-muted"
+                      )}
+                    >
+                      {getKeyDisplay(key)}
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

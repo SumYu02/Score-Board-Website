@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 const GAME_DURATION = 60; // 60 seconds
 
-type GameState = "idle" | "playing" | "finished";
+type GameState = "idle" | "ready" | "playing" | "finished";
 
 interface GameStats {
   wordsTyped: number;
@@ -73,6 +73,32 @@ export function Typing() {
     }
   }, []);
 
+  // End game
+  const endGame = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    setGameState("finished");
+    inputRef.current?.blur();
+  }, []);
+
+  // Start the timer (called when user presses Enter)
+  const startTimer = useCallback(() => {
+    if (timerRef.current) {
+      clearInterval(timerRef.current);
+    }
+    timerRef.current = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 1) {
+          endGame();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  }, [endGame]);
+
   // Initialize game
   const startGame = async () => {
     if (!isAuthenticated) {
@@ -102,38 +128,17 @@ export function Typing() {
       wpm: 0,
       accuracy: 0,
     });
-    setGameState("playing");
+    setGameState("ready"); // Set to "ready" instead of "playing" - timer will start on Enter
 
     // Focus input
     setTimeout(() => {
       inputRef.current?.focus();
     }, 100);
-
-    // Start timer
-    timerRef.current = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 1) {
-          endGame();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
   };
-
-  // End game
-  const endGame = useCallback(() => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-    setGameState("finished");
-    inputRef.current?.blur();
-  }, []);
 
   // Handle input change
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (gameState !== "playing") return;
+    if (gameState !== "playing" && gameState !== "ready") return;
 
     const value = e.target.value;
     setUserInput(value);
@@ -254,6 +259,13 @@ export function Typing() {
       startGame();
     }
 
+    // Start timer when Enter is pressed in "ready" state
+    if (e.key === "Enter" && gameState === "ready") {
+      e.preventDefault();
+      setGameState("playing");
+      startTimer();
+    }
+
     // Track pressed key for keyboard visualization
     if (gameState === "playing") {
       setPressedKey(e.key);
@@ -262,6 +274,13 @@ export function Typing() {
 
   // Handle key down for better key tracking
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Start timer when Enter is pressed in "ready" state
+    if (e.key === "Enter" && gameState === "ready") {
+      e.preventDefault();
+      setGameState("playing");
+      startTimer();
+    }
+
     if (gameState === "playing") {
       setPressedKey(e.key);
     }
@@ -389,6 +408,50 @@ export function Typing() {
             </Card>
           )}
 
+          {gameState === "ready" && (
+            <div className="w-full space-y-6">
+              {/* Text to Type */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Type the text below:</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="p-6 bg-muted/50 rounded-lg border min-h-[120px] text-lg sm:text-xl font-mono leading-relaxed">
+                    {renderTextWithHighlight()}
+                    {userInput.length < currentText.length && (
+                      <span className="animate-pulse">|</span>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Input Field */}
+              <Card>
+                <CardContent className="pt-6">
+                  <Input
+                    ref={inputRef}
+                    type="text"
+                    value={userInput}
+                    onChange={handleInputChange}
+                    onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
+                    placeholder="Press Enter to start..."
+                    className="text-lg sm:text-xl font-mono"
+                    autoFocus
+                    disabled={gameState !== "ready"}
+                  />
+                  <p className="text-sm text-muted-foreground mt-2 text-center">
+                    Press{" "}
+                    <kbd className="px-2 py-1 bg-muted rounded text-sm font-mono">
+                      Enter
+                    </kbd>{" "}
+                    to start the timer
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
           {gameState === "playing" && (
             <div className="w-full space-y-6">
               {/* Timer and Stats */}
@@ -458,8 +521,7 @@ export function Typing() {
                     disabled={gameState !== "playing"}
                   />
                   <p className="text-sm text-muted-foreground mt-2">
-                    Press Enter to start a new word when you complete the
-                    current one
+                    Type the text above. The timer is running!
                   </p>
                 </CardContent>
               </Card>
