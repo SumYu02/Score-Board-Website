@@ -2,10 +2,11 @@ import { z } from "zod";
 import { useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { useMutation } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
   Card,
-  CardAction,
   CardContent,
   CardDescription,
   CardFooter,
@@ -14,17 +15,36 @@ import {
 } from "@/components/ui/card";
 import { Input, Label, Navbar } from "../components";
 import { Eye, EyeOff } from "lucide-react";
+import { authService } from "@/services/authService";
+import { useAuthStore } from "@/store/authStore";
+import { toast } from "sonner";
 
-const formSchema = z.object({
-  username: z.string().min(1),
-  email: z.string().email(),
-  password: z.string().min(8),
-  confirmPassword: z.string().min(8),
-});
+const formSchema = z
+  .object({
+    username: z
+      .string()
+      .min(1, "Username is required")
+      .regex(
+        /^[a-zA-Z0-9_]+$/,
+        "Username must not contain symbols (only letters, numbers, and underscores allowed)"
+      ),
+    email: z.string().email("Invalid email address"),
+    password: z.string().min(7, "Password must be at least 7 characters"),
+    confirmPassword: z
+      .string()
+      .min(7, "Password must be at least 7 characters"),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords do not match",
+    path: ["confirmPassword"],
+  });
 
 type FormData = z.infer<typeof formSchema>;
 
 export function Register() {
+  const navigate = useNavigate();
+  const setAuth = useAuthStore((state) => state.setAuth);
+
   const {
     control,
     handleSubmit,
@@ -50,6 +70,28 @@ export function Register() {
     setShowConfirmPassword(!showConfirmPassword);
   };
 
+  const registerMutation = useMutation({
+    mutationFn: authService.register,
+    onSuccess: (data) => {
+      toast.success("Registration successful!");
+      setAuth(data.user, data.token);
+      setTimeout(() => {
+        navigate("/");
+      }, 1000);
+    },
+    onError: (error: any) => {
+      console.error("Registration error:", error);
+      toast.error(
+        error.response?.data?.error || "Registration failed. Please try again."
+      );
+    },
+  });
+
+  const onSubmit = (data: FormData) => {
+    const { confirmPassword, ...registerData } = data;
+    registerMutation.mutate(registerData);
+  };
+
   return (
     <>
       <Navbar />
@@ -62,7 +104,7 @@ export function Register() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <form>
+            <form onSubmit={handleSubmit(onSubmit)}>
               <div className="flex flex-col gap-6">
                 <Controller
                   control={control}
@@ -73,10 +115,14 @@ export function Register() {
                       <Input
                         id="username"
                         type="text"
-                        placeholder="John Doe"
-                        required
+                        placeholder="johndoe"
                         {...field}
                       />
+                      {errors.username && (
+                        <p className="text-sm text-destructive">
+                          {errors.username.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 />
@@ -90,9 +136,13 @@ export function Register() {
                         id="email"
                         type="email"
                         placeholder="m@example.com"
-                        required
                         {...field}
                       />
+                      {errors.email && (
+                        <p className="text-sm text-destructive">
+                          {errors.email.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 />
@@ -116,9 +166,13 @@ export function Register() {
                         id="password"
                         type={showPassword ? "text" : "password"}
                         placeholder="Password"
-                        required
                         {...field}
                       />
+                      {errors.password && (
+                        <p className="text-sm text-destructive">
+                          {errors.password.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 />
@@ -144,20 +198,36 @@ export function Register() {
                         id="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm Password"
-                        required
                         {...field}
                       />
+                      {errors.confirmPassword && (
+                        <p className="text-sm text-destructive">
+                          {errors.confirmPassword.message}
+                        </p>
+                      )}
                     </div>
                   )}
                 />
+                {registerMutation.isError && (
+                  <p className="text-sm text-destructive">
+                    {registerMutation.error?.response?.data?.error ||
+                      "Registration failed. Please try again."}
+                  </p>
+                )}
               </div>
+              <CardFooter className="flex-col gap-2 px-0 pt-6">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={registerMutation.isPending}
+                >
+                  {registerMutation.isPending
+                    ? "Creating account..."
+                    : "Create account"}
+                </Button>
+              </CardFooter>
             </form>
           </CardContent>
-          <CardFooter className="flex-col gap-2">
-            <Button type="submit" className="w-full">
-              Login
-            </Button>
-          </CardFooter>
         </Card>
       </div>
     </>
