@@ -4,6 +4,7 @@ import { Moon, Sun, Key, User, LogOut } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
+import { scoreService } from "@/services/scoreService";
 
 import {
   Drawer,
@@ -21,11 +22,9 @@ export function Navbar() {
   const [isDark, setIsDark] = useState(false);
   const navigate = useNavigate();
 
-  const { isAuthenticated } = useAuthStore();
-  const { user } = useAuthStore();
-
-  console.log(user);
-  console.log(isAuthenticated);
+  const { isAuthenticated, user, setAuth } = useAuthStore();
+  const [currentScore, setCurrentScore] = useState<number | null>(null);
+  const [isLoadingScore, setIsLoadingScore] = useState(false);
 
   useEffect(() => {
     const checkTheme = () => {
@@ -48,6 +47,52 @@ export function Navbar() {
     const root = document.documentElement;
     setIsDark(root.classList.contains("dark"));
   }, [theme]);
+
+  // Fetch current user score when authenticated
+  useEffect(() => {
+    const fetchUserScore = async () => {
+      if (isAuthenticated && user) {
+        setIsLoadingScore(true);
+        try {
+          const response = await scoreService.getCurrentUserScore();
+          setCurrentScore(response.user.score);
+
+          // Update auth store with latest score
+          const token = localStorage.getItem("token");
+          if (user && token) {
+            setAuth(
+              {
+                ...user,
+                score: response.user.score,
+              },
+              token
+            );
+          }
+        } catch (error) {
+          console.error("Error fetching user score:", error);
+          // Fallback to stored score if API fails
+          setCurrentScore(user?.score || 0);
+        } finally {
+          setIsLoadingScore(false);
+        }
+      } else {
+        setCurrentScore(null);
+      }
+    };
+
+    if (isAuthenticated) {
+      fetchUserScore();
+
+      // Refresh score every 30 seconds when authenticated
+      const intervalId = setInterval(fetchUserScore, 30000);
+
+      return () => {
+        clearInterval(intervalId);
+      };
+    } else {
+      setCurrentScore(null);
+    }
+  }, [isAuthenticated, user?.id, user, setAuth]); // Re-fetch when auth state or user ID changes
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -122,7 +167,11 @@ export function Navbar() {
                               Score
                             </span>
                             <span className="text-2xl font-bold text-primary">
-                              {user?.score || 0}
+                              {isLoadingScore
+                                ? "..."
+                                : currentScore !== null
+                                ? currentScore
+                                : user?.score || 0}
                             </span>
                           </div>
                         </div>

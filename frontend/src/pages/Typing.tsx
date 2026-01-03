@@ -4,22 +4,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { scoreService } from "@/services/scoreService";
+import { typingService } from "@/services/typingService";
 import { useAuthStore } from "@/store/authStore";
 import { toast } from "sonner";
-
-// Sample words/phrases for typing game
-const TYPING_WORDS = [
-  "The quick brown fox jumps over the lazy dog",
-  "Programming is the art of telling another human what one wants the computer to do",
-  "Type as fast as you can to improve your typing speed",
-  "Practice makes perfect when it comes to typing skills",
-  "The best way to learn is by doing and practicing regularly",
-  "Technology has transformed the way we work and communicate",
-  "Consistency is key to mastering any skill including typing",
-  "Focus and concentration will help you type more accurately",
-  "Speed and accuracy are both important in typing",
-  "Keep practicing to become a better typist every day",
-];
 
 const GAME_DURATION = 60; // 60 seconds
 
@@ -48,21 +35,42 @@ export function Typing() {
   });
   const [wordIndex, setWordIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isLoadingText, setIsLoadingText] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  // Get random text
-  const getRandomText = useCallback(() => {
-    return TYPING_WORDS[Math.floor(Math.random() * TYPING_WORDS.length)];
+  // Fetch random text from backend
+  const fetchRandomText = useCallback(async () => {
+    try {
+      setIsLoadingText(true);
+      const textData = await typingService.getRandomText();
+      return textData.text;
+    } catch (error: any) {
+      console.error("Error fetching typing text:", error);
+      toast.error(
+        error.response?.data?.error ||
+          "Failed to load typing text. Please try again."
+      );
+      return null;
+    } finally {
+      setIsLoadingText(false);
+    }
   }, []);
 
   // Initialize game
-  const startGame = () => {
+  const startGame = async () => {
     if (!isAuthenticated) {
       toast.error("Please login to play the typing game");
       return;
     }
-    setCurrentText(getRandomText());
+
+    // Fetch text from backend
+    const text = await fetchRandomText();
+    if (!text) {
+      return; // Error already shown in fetchRandomText
+    }
+
+    setCurrentText(text);
     setUserInput("");
     setTimeLeft(GAME_DURATION);
     setWordIndex(0);
@@ -137,13 +145,19 @@ export function Typing() {
 
     // Check if text is completed
     if (value === currentText) {
-      // Move to next word
+      // Move to next word - fetch new text from backend
       const newWordIndex = wordIndex + 1;
       setWordIndex(newWordIndex);
-      setCurrentText(getRandomText());
-      setUserInput("");
-      newStats.wordsTyped = newWordIndex + 1;
-      setStats(newStats);
+
+      // Fetch new text from backend
+      fetchRandomText().then((newText) => {
+        if (newText) {
+          setCurrentText(newText);
+          setUserInput("");
+          newStats.wordsTyped = newWordIndex + 1;
+          setStats(newStats);
+        }
+      });
     }
   };
 
@@ -259,8 +273,13 @@ export function Typing() {
                     ⚠️ Please login to play and submit your score
                   </p>
                 )}
-                <Button onClick={startGame} className="w-full" size="lg">
-                  Start Game
+                <Button
+                  onClick={startGame}
+                  className="w-full"
+                  size="lg"
+                  disabled={isLoadingText}
+                >
+                  {isLoadingText ? "Loading..." : "Start Game"}
                 </Button>
               </CardContent>
             </Card>

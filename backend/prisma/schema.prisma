@@ -35,3 +35,16 @@ model ActionLog {
   @@index([createdAt])
 }
 
+model TypingText {
+  id        String   @id @default(uuid())
+  text      String   @unique
+  difficulty String  @default("medium") // easy, medium, hard
+  isActive   Boolean @default(true)
+
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([isActive])
+  @@index([difficulty])
+}
+

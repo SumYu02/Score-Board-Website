@@ -3,6 +3,7 @@ import express, { type Express } from "express";
 import cors from "cors";
 import authRoutes from "./src/routes/auth.js";
 import scoreRoutes from "./src/routes/score.js";
+import typingRoutes from "./src/routes/typing.js";
 
 const app: Express = express();
 
@@ -14,6 +15,7 @@ app.use(express.urlencoded({ extended: true }));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/score", scoreRoutes);
+app.use("/api/typing", typingRoutes);
 
 // Health check endpoint
 app.get("/health", (req, res) => {

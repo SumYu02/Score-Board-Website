@@ -14,7 +14,7 @@ export function Home() {
   const [displayedSubtitle, setDisplayedSubtitle] = useState("");
 
   const title = "Welcome to the Score Board";
-  const subtitle = "This is a simple score board for your games.";
+  const subtitle = "This is a simple typing game.";
 
   useEffect(() => {
     let titleIndex = 0;
