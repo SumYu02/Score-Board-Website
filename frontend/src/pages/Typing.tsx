@@ -4,6 +4,13 @@ import { Keyboard } from "@/components/Keyboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { scoreService } from "@/services/scoreService";
 import { typingService } from "@/services/typingService";
 import { useAuthStore } from "@/store/authStore";
@@ -49,11 +56,30 @@ export function Typing() {
   const [wordIndex, setWordIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingText, setIsLoadingText] = useState(false);
+  const [showLevelModal, setShowLevelModal] = useState(false);
+  const [finalWpm, setFinalWpm] = useState(0);
   const inputRef = useRef<HTMLInputElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
   // Track persistent stats for current word (don't decrease on deletion)
   const maxCurrentWordLengthRef = useRef<number>(0);
   const maxCurrentWordMistakesRef = useRef<number>(0);
+
+  // Determine level based on WPM
+  const getLevel = (wpm: number): { name: string; range: string } => {
+    if (wpm < 20) {
+      return { name: "Beginner", range: "0 – 20 WPM" };
+    } else if (wpm < 35) {
+      return { name: "Casual user", range: "20 – 35 WPM" };
+    } else if (wpm < 45) {
+      return { name: "Average typist", range: "35 – 45 WPM" };
+    } else if (wpm < 60) {
+      return { name: "Good typist", range: "45 – 60 WPM" };
+    } else if (wpm < 80) {
+      return { name: "Fast typist", range: "60 – 80 WPM" };
+    } else {
+      return { name: "Professional", range: "80+ WPM" };
+    }
+  };
 
   // Fetch random text from backend
   const fetchRandomText = useCallback(async () => {
@@ -315,6 +341,10 @@ export function Typing() {
       toast.success(
         `Score submitted! You earned ${response.pointsEarned} points (${stats.wpm} WPM, ${stats.accuracy}% accuracy)`
       );
+
+      // Store final WPM and show level modal
+      setFinalWpm(stats.wpm);
+      setShowLevelModal(true);
 
       // Reset game
       setGameState("idle");
@@ -614,6 +644,57 @@ export function Typing() {
           )}
         </div>
       </div>
+
+      {/* Level Modal */}
+      <Dialog open={showLevelModal} onOpenChange={setShowLevelModal}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Your Typing Level</DialogTitle>
+            <DialogDescription>
+              Based on your performance, here's your current typing level.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="text-center">
+              <div className="text-4xl font-bold text-primary mb-2">
+                {finalWpm} WPM
+              </div>
+              <div className="text-2xl font-semibold">
+                = {getLevel(finalWpm).name} level
+              </div>
+            </div>
+            <div className="border-t pt-4">
+              <h3 className="font-semibold mb-3">Typing Level Ranges:</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex justify-between">
+                  <span>Beginner</span>
+                  <span className="text-muted-foreground">0 – 20 WPM</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Casual user</span>
+                  <span className="text-muted-foreground">20 – 35 WPM</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Average typist</span>
+                  <span className="text-muted-foreground">35 – 45 WPM</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Good typist</span>
+                  <span className="text-muted-foreground">45 – 60 WPM</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Fast typist</span>
+                  <span className="text-muted-foreground">60 – 80 WPM</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Professional</span>
+                  <span className="text-muted-foreground">80+ WPM</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
