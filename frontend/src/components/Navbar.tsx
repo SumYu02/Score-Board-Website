@@ -1,10 +1,11 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { Button } from "./ui/button";
 import { Moon, Sun, Key, User, LogOut, Gamepad2 } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 import { scoreService } from "@/services/scoreService";
+import { useQuery } from "@tanstack/react-query";
 
 import {
   Drawer,
@@ -16,7 +17,6 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Card, CardContent } from "./ui/card";
-import { authService } from "@/services/authService";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -24,8 +24,12 @@ export function Navbar() {
   const navigate = useNavigate();
 
   const { isAuthenticated, user, setAuth } = useAuthStore();
-  const [currentScore, setCurrentScore] = useState<number | null>(null);
-  const [isLoadingScore, setIsLoadingScore] = useState(false);
+  const lastUpdatedScoreRef = useRef<number | null>(null);
+
+  // Reset ref when user changes
+  useEffect(() => {
+    lastUpdatedScoreRef.current = user?.score ?? null;
+  }, [user?.id]);
 
   useEffect(() => {
     const checkTheme = () => {
@@ -49,51 +53,34 @@ export function Navbar() {
     setIsDark(root.classList.contains("dark"));
   }, [theme]);
 
-  // Fetch current user score when authenticated
+  const { data: userScoreData, isLoading: isLoadingScore } = useQuery({
+    queryKey: ["userScore", user?.id],
+    queryFn: scoreService.getCurrentUserScore,
+    enabled: isAuthenticated && !!user,
+    refetchInterval: 30000, // Refresh every 30 seconds
+  });
+
   useEffect(() => {
-    const fetchUserScore = async () => {
-      if (isAuthenticated && user) {
-        setIsLoadingScore(true);
-        try {
-          const response = await authService.getCurrentUser();
-          setCurrentScore(response.score);
-
-          // Update auth store with latest score
-          const token = localStorage.getItem("token");
-          if (user && token) {
-            setAuth(
-              {
-                ...user,
-                score: response.score,
-              },
-              token
-            );
-          }
-        } catch (error) {
-          console.error("Error fetching user score:", error);
-          // Fallback to stored score if API fails
-          setCurrentScore(user?.score || 0);
-        } finally {
-          setIsLoadingScore(false);
-        }
-      } else {
-        setCurrentScore(null);
+    const newScore = userScoreData?.user?.score;
+    if (
+      newScore !== undefined &&
+      user &&
+      newScore !== user.score &&
+      newScore !== lastUpdatedScoreRef.current
+    ) {
+      const token = localStorage.getItem("token");
+      if (token) {
+        lastUpdatedScoreRef.current = newScore;
+        setAuth(
+          {
+            ...user,
+            score: newScore,
+          },
+          token
+        );
       }
-    };
-
-    if (isAuthenticated) {
-      fetchUserScore();
-
-      // Refresh score every 30 seconds when authenticated
-      const intervalId = setInterval(fetchUserScore, 30000);
-
-      return () => {
-        clearInterval(intervalId);
-      };
-    } else {
-      setCurrentScore(null);
     }
-  }, [isAuthenticated, user?.id, user, setAuth]); // Re-fetch when auth state or user ID changes
+  }, [userScoreData?.user?.score, user, setAuth]);
 
   const toggleTheme = () => {
     const root = document.documentElement;
@@ -124,79 +111,81 @@ export function Navbar() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={!isAuthenticated ? () => navigate("/login") : undefined}
-          >
-            {isAuthenticated ? (
-              <Drawer>
-                <DrawerTrigger asChild>
-                  <button className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                    <User className="h-6 w-6" />
-                  </button>
-                </DrawerTrigger>
-                <DrawerContent>
-                  <DrawerHeader>
-                    <DrawerTitle className="text-2xl font-bold">
-                      User Profile
-                    </DrawerTitle>
-                    <DrawerDescription>
-                      View your account information and progress
-                    </DrawerDescription>
-                  </DrawerHeader>
-                  <div className="px-4 pb-6">
-                    <Card className="border-none shadow-none">
-                      <CardContent className="pt-6 space-y-4">
-                        <div className="flex items-center gap-4">
-                          <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
-                            {user?.username?.[0]?.toUpperCase() || "U"}
-                          </div>
-                          <div className="flex-1">
-                            <h3 className="text-xl font-semibold">
-                              {user?.username}
-                            </h3>
-                            <p className="text-sm text-muted-foreground">
-                              {user?.email}
-                            </p>
-                          </div>
+          {isAuthenticated ? (
+            <Drawer>
+              <DrawerTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="rounded-full p-2 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                >
+                  <User className="h-6 w-6" />
+                </Button>
+              </DrawerTrigger>
+              <DrawerContent>
+                <DrawerHeader>
+                  <DrawerTitle className="text-2xl font-bold">
+                    User Profile
+                  </DrawerTitle>
+                  <DrawerDescription>
+                    View your account information and progress
+                  </DrawerDescription>
+                </DrawerHeader>
+                <div className="px-4 pb-6">
+                  <Card className="border-none shadow-none">
+                    <CardContent className="pt-6 space-y-4">
+                      <div className="flex items-center gap-4">
+                        <div className="h-16 w-16 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white text-2xl font-bold">
+                          {user?.username?.[0]?.toUpperCase() || "U"}
                         </div>
+                        <div className="flex-1">
+                          <h3 className="text-xl font-semibold">
+                            {user?.username}
+                          </h3>
+                          <p className="text-sm text-muted-foreground">
+                            {user?.email}
+                          </p>
+                        </div>
+                      </div>
 
-                        <div className="pt-4 border-t">
-                          <div className="flex items-center justify-between">
-                            <span className="text-sm font-medium text-muted-foreground">
-                              Score
-                            </span>
-                            <span className="text-2xl font-bold text-primary">
-                              {isLoadingScore
-                                ? "..."
-                                : currentScore !== null
-                                ? currentScore
-                                : user?.score || 0}
-                            </span>
-                          </div>
+                      <div className="pt-4 border-t">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium text-muted-foreground">
+                            Score
+                          </span>
+                          <span className="text-2xl font-bold text-primary">
+                            {isLoadingScore
+                              ? "..."
+                              : userScoreData?.user.score ?? user?.score ?? 0}
+                          </span>
                         </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <DrawerFooter>
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        useAuthStore.getState().logout();
-                        navigate("/login");
-                      }}
-                      className="p-5"
-                    >
-                      <LogOut className="h-4 w-4" /> Logout
-                    </Button>
-                  </DrawerFooter>
-                </DrawerContent>
-              </Drawer>
-            ) : (
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+                <DrawerFooter>
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      useAuthStore.getState().logout();
+                      navigate("/login");
+                    }}
+                    className="p-5"
+                  >
+                    <LogOut className="h-4 w-4" /> Logout
+                  </Button>
+                </DrawerFooter>
+              </DrawerContent>
+            </Drawer>
+          ) : (
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => navigate("/login")}
+            >
               <Key className="h-7 w-7" />
-            )}
-          </Button>
+            </Button>
+          )}
 
           <Button variant="ghost" size="icon" onClick={() => navigate("/game")}>
             <Gamepad2 className="h-7 w-7" />

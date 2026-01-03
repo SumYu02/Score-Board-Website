@@ -110,54 +110,51 @@ export function Typing() {
     inputRef.current?.blur();
   }, []);
 
+  const loadNextSentence = async () => {
+    const newText = await fetchRandomText();
+    if (!newText) return;
+
+    setCurrentText(newText);
+    setUserInput("");
+  };
   // Handle input change
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (gameState !== "playing") return;
 
     const value = e.target.value;
     setUserInput(value);
 
-    // Calculate stats
-    const newStats = { ...stats };
-    newStats.charactersTyped = value.length;
-
-    // Count correct characters
     let correct = 0;
+
+    // Count correct characters for CURRENT sentence
     for (let i = 0; i < value.length; i++) {
-      if (value[i] === currentText[i]) {
-        correct++;
-      }
+      if (value[i] === currentText[i]) correct++;
     }
-    newStats.charactersCorrect = correct;
-    newStats.accuracy =
-      newStats.charactersTyped > 0
-        ? Math.round((correct / newStats.charactersTyped) * 100)
-        : 0;
 
-    // Calculate WPM (words per minute)
-    // WPM = (characters typed / 5) / (time elapsed / 60)
-    const timeElapsed = GAME_DURATION - timeLeft;
-    const wordsTyped = correct / 5;
-    newStats.wpm =
-      timeElapsed > 0 ? Math.round((wordsTyped / timeElapsed) * 60) : 0;
+    setStats((prev) => {
+      const timeElapsed = GAME_DURATION - timeLeft;
 
-    setStats(newStats);
+      const totalCorrect = prev.charactersCorrect + correct;
+      const totalTyped = prev.charactersTyped + value.length;
 
-    // Check if text is completed
-    if (value === currentText) {
-      // Move to next word - fetch new text from backend
-      const newWordIndex = wordIndex + 1;
-      setWordIndex(newWordIndex);
+      const wpm =
+        timeElapsed > 0 ? Math.round((totalCorrect / 5 / timeElapsed) * 60) : 0;
 
-      // Fetch new text from backend
-      fetchRandomText().then((newText) => {
-        if (newText) {
-          setCurrentText(newText);
-          setUserInput("");
-          newStats.wordsTyped = newWordIndex + 1;
-          setStats(newStats);
-        }
-      });
+      return {
+        ...prev,
+        charactersTyped: totalTyped,
+        charactersCorrect: totalCorrect,
+        wordsTyped: Math.floor(totalCorrect / 5), // ✅ FIX #3
+        accuracy:
+          value.length > 0 ? Math.round((correct / value.length) * 100) : 0,
+        wpm,
+      };
+    });
+
+    // ✅ FIX #2: sentence completion check
+    if (value.length === currentText.length && correct === currentText.length) {
+      loadNextSentence(); // fetch new text, reset input
     }
   };
 

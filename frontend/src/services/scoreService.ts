@@ -47,6 +47,16 @@ export interface TypingGameScoreResponse {
   };
 }
 
+export interface CurrentUserScoreResponse {
+  user: {
+    id: string;
+    username: string;
+    email: string;
+    score: number;
+    createdAt: string;
+  };
+}
+
 export const scoreService = {
   getLeaderboard: async (): Promise<LeaderboardResponse> => {
     const response = await api.get<LeaderboardResponse>(
@@ -70,6 +80,10 @@ export const scoreService = {
       "/api/score/typing-game",
       stats
     );
+    return response.data;
+  },
+  getCurrentUserScore: async (): Promise<CurrentUserScoreResponse> => {
+    const response = await api.get<CurrentUserScoreResponse>("/api/score/me");
     return response.data;
   },
 };
