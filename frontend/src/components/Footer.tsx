@@ -1,11 +1,13 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useTheme } from "./theme-provider";
 
 const Footer = () => {
   const navigate = useNavigate();
+
   return (
     // bg-gradient-to-b from-[#373737] to-[#FFFFFF]
-    <footer className="w-full  text-gray-800  border-t border-slate-200">
+    <footer className="w-full  theme:text-gray-800 border-t border-border/40 bg-background/95">
       <div className="max-w-7xl mx-auto px-6 py-16 flex flex-col items-center">
         <div
           className="flex items-center justify-center gap-2 "
@@ -23,7 +25,7 @@ const Footer = () => {
           Score Board is a simple score board for your games.
         </p>
       </div>
-      <div className="border-t border-slate-200">
+      <div className="border-t border-border/40">
         <div className="max-w-7xl mx-auto px-6 py-6 text-center text-sm font-normal">
           <a href="https://prebuiltui.com">Score Board</a> ©2026. All rights
           reserved.

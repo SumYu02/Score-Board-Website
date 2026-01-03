@@ -3,7 +3,8 @@ import { useState, useEffect } from "react";
 import Footer from "@/components/Footer";
 import { Table } from "@/components/Table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { CircleChevronDown } from "lucide-react";
+import Github from "@/components/Github";
 
 export function Home() {
   const [displayed, setDisplayed] = useState("");
@@ -39,50 +40,64 @@ export function Home() {
     };
   }, []);
 
+  const scrollToLeaderboard = () => {
+    const leaderboard = document.getElementById("leaderboard");
+    if (leaderboard) {
+      const navbarHeight = 26;
+      const elementPosition = leaderboard.getBoundingClientRect().top;
+      const offsetPosition =
+        elementPosition + window.pageYOffset - navbarHeight;
+
+      window.scrollTo({
+        top: offsetPosition,
+        behavior: "smooth",
+      });
+    }
+  };
+
   return (
     <div className="w-full min-h-screen bg-background flex flex-col">
       <Navbar />
-      {/* Centered Title and Subtitle Section - Takes full viewport height minus navbar */}
-      <div className="min-h-screen sm:min-h-[calc(100vh-64px)] flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-8">
-        <div className="flex flex-col items-center justify-center gap-6 ">
-          <p className="text-5xl font-bold text-foreground">
+
+      <div className="min-h-[calc(70vh)] sm:min-h-[calc(100vh-64px)] flex flex-col items-center justify-between sm:justify-center w-full max-w-4xl mx-auto  ">
+        <div className="flex-1 flex flex-col items-center justify-center gap-4 sm:gap-6 ">
+          <p className="text-4xl sm:text-5xl font-bold text-foreground text-center">
             {displayed}
             <span className="ml-1 animate-pulse">|</span>
           </p>
           {displayed === title && (
-            <p className="text-2xl text-muted-foreground">
+            <p className="text-xl sm:text-2xl text-muted-foreground text-center">
               {displayedSubtitle}
             </p>
           )}
         </div>
-        <div className="fade-in animate-pulse">
-          <Button
-            variant="outline"
-            onClick={() => {
-              const leaderboard = document.getElementById("leaderboard");
-              if (leaderboard) {
-                leaderboard.scrollIntoView({ behavior: "smooth" });
-              }
-            }}
-          >
-            Leaderboard
-          </Button>
+
+        <div className="flex absolute bottom-50 sm:bottom-20  justify-center items-center w-full pb-4 sm:mt-8 sm:pb-0 animate-in fade-in duration-500">
+          <CircleChevronDown
+            className="size-10 animate-pulse cursor-pointer"
+            onClick={scrollToLeaderboard}
+          />
         </div>
       </div>
 
       {/* Leaderboard Section */}
-      <div className="flex flex-col w-full max-w-4xl mx-auto px-8 pb-8 gap-8 min-h-screen">
-        <Card>
+      <div
+        id="leaderboard"
+        className="flex flex-col items-center justify-center w-full max-w-4xl mx-auto px-8 py-16 gap-8"
+      >
+        <Card className="w-full">
           <CardHeader>
-            <CardTitle id="leaderboard" className="text-2xl font-bold">
-              Leaderboard
-            </CardTitle>
+            <CardTitle className="text-2xl font-bold">Leaderboard</CardTitle>
           </CardHeader>
           <CardContent>
             <Table />
           </CardContent>
         </Card>
       </div>
+      <div className="w-full max-w-4xl mx-auto px-8 py-16">
+        <Github />
+      </div>
+
       <Footer />
     </div>
   );
