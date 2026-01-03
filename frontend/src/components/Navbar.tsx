@@ -1,13 +1,12 @@
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { Moon, Sun, Key, User } from "lucide-react";
+import { Moon, Sun, Key, User, LogOut } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
 
 import {
   Drawer,
-  DrawerClose,
   DrawerContent,
   DrawerDescription,
   DrawerFooter,
@@ -15,13 +14,7 @@ import {
   DrawerTitle,
   DrawerTrigger,
 } from "@/components/ui/drawer";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "./ui/card";
+import { Card, CardContent } from "./ui/card";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -30,6 +23,9 @@ export function Navbar() {
 
   const { isAuthenticated } = useAuthStore();
   const { user } = useAuthStore();
+
+  console.log(user);
+  console.log(isAuthenticated);
 
   useEffect(() => {
     const checkTheme = () => {
@@ -82,7 +78,11 @@ export function Navbar() {
 
         {/* Right side actions */}
         <div className="flex items-center gap-2">
-          <Button variant="ghost" size="icon">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={!isAuthenticated ? () => navigate("/login") : undefined}
+          >
             {isAuthenticated ? (
               <Drawer>
                 <DrawerTrigger asChild>
@@ -99,7 +99,6 @@ export function Navbar() {
                       View your account information and progress
                     </DrawerDescription>
                   </DrawerHeader>
-
                   <div className="px-4 pb-6">
                     <Card className="border-none shadow-none">
                       <CardContent className="pt-6 space-y-4">
@@ -130,10 +129,22 @@ export function Navbar() {
                       </CardContent>
                     </Card>
                   </div>
+                  <DrawerFooter>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        useAuthStore.getState().logout();
+                        navigate("/login");
+                      }}
+                      className="p-5"
+                    >
+                      <LogOut className="h-4 w-4" /> Logout
+                    </Button>
+                  </DrawerFooter>
                 </DrawerContent>
               </Drawer>
             ) : (
-              <Key className="h-7 w-7" onClick={() => navigate("/login")} />
+              <Key className="h-7 w-7" />
             )}
           </Button>
 
