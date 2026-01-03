@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 import { Navbar } from "@/components/Navbar";
+import { Keyboard } from "@/components/Keyboard";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,9 +15,17 @@ type GameState = "idle" | "playing" | "finished";
 
 interface GameStats {
   wordsTyped: number;
+  totalCharactersTyped: number; // Total across all words
+  totalCharactersCorrect: number; // Total correct across all words
+  currentWordCharactersTyped: number; // Current word only
+  currentWordCharactersCorrect: number; // Current word only
+  wpm: number;
+  accuracy: number; // Average accuracy across all words
+}
+
+interface WordStats {
   charactersTyped: number;
   charactersCorrect: number;
-  wpm: number;
   accuracy: number;
 }
 
@@ -28,11 +37,15 @@ export function Typing() {
   const [timeLeft, setTimeLeft] = useState(GAME_DURATION);
   const [stats, setStats] = useState<GameStats>({
     wordsTyped: 0,
-    charactersTyped: 0,
-    charactersCorrect: 0,
+    totalCharactersTyped: 0,
+    totalCharactersCorrect: 0,
+    currentWordCharactersTyped: 0,
+    currentWordCharactersCorrect: 0,
     wpm: 0,
     accuracy: 0,
   });
+  const [wordStats, setWordStats] = useState<WordStats[]>([]); // Track stats for each completed word
+  const [pressedKey, setPressedKey] = useState<string | null>(null);
   const [wordIndex, setWordIndex] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isLoadingText, setIsLoadingText] = useState(false);
@@ -74,10 +87,13 @@ export function Typing() {
     setUserInput("");
     setTimeLeft(GAME_DURATION);
     setWordIndex(0);
+    setWordStats([]);
     setStats({
       wordsTyped: 0,
-      charactersTyped: 0,
-      charactersCorrect: 0,
+      totalCharactersTyped: 0,
+      totalCharactersCorrect: 0,
+      currentWordCharactersTyped: 0,
+      currentWordCharactersCorrect: 0,
       wpm: 0,
       accuracy: 0,
     });
@@ -110,51 +126,93 @@ export function Typing() {
     inputRef.current?.blur();
   }, []);
 
-  const loadNextSentence = async () => {
-    const newText = await fetchRandomText();
-    if (!newText) return;
-
-    setCurrentText(newText);
-    setUserInput("");
-  };
   // Handle input change
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (gameState !== "playing") return;
 
     const value = e.target.value;
     setUserInput(value);
 
-    let correct = 0;
-
-    // Count correct characters for CURRENT sentence
+    // Calculate current word stats
+    const currentWordLength = value.length;
+    let currentWordCorrect = 0;
     for (let i = 0; i < value.length; i++) {
-      if (value[i] === currentText[i]) correct++;
+      if (value[i] === currentText[i]) {
+        currentWordCorrect++;
+      }
     }
 
-    setStats((prev) => {
-      const timeElapsed = GAME_DURATION - timeLeft;
+    // Calculate total stats (including all previous words)
+    const totalCharsTyped =
+      stats.totalCharactersTyped -
+      stats.currentWordCharactersTyped +
+      currentWordLength;
+    const totalCharsCorrect =
+      stats.totalCharactersCorrect -
+      stats.currentWordCharactersCorrect +
+      currentWordCorrect;
 
-      const totalCorrect = prev.charactersCorrect + correct;
-      const totalTyped = prev.charactersTyped + value.length;
+    // Calculate average accuracy across all completed words + current word
+    const timeElapsed = GAME_DURATION - timeLeft;
+    const minutesElapsed = timeElapsed / 60;
 
-      const wpm =
-        timeElapsed > 0 ? Math.round((totalCorrect / 5 / timeElapsed) * 60) : 0;
+    // Calculate WPM: (Total characters typed ÷ 5) ÷ minutes
+    const wpm =
+      minutesElapsed > 0 ? Math.round(totalCharsTyped / 5 / minutesElapsed) : 0;
 
-      return {
-        ...prev,
-        charactersTyped: totalTyped,
-        charactersCorrect: totalCorrect,
-        wordsTyped: Math.floor(totalCorrect / 5), // ✅ FIX #3
+    // Calculate average accuracy: (total correct / total typed) * 100
+    const accuracy =
+      totalCharsTyped > 0
+        ? Math.round((totalCharsCorrect / totalCharsTyped) * 100)
+        : 0;
+
+    const newStats: GameStats = {
+      wordsTyped: stats.wordsTyped,
+      totalCharactersTyped: totalCharsTyped,
+      totalCharactersCorrect: totalCharsCorrect,
+      currentWordCharactersTyped: currentWordLength,
+      currentWordCharactersCorrect: currentWordCorrect,
+      wpm,
+      accuracy,
+    };
+
+    setStats(newStats);
+
+    // Check if text is completed
+    if (value === currentText) {
+      // Save stats for this completed word
+      const completedWordStats: WordStats = {
+        charactersTyped: currentWordLength,
+        charactersCorrect: currentWordCorrect,
         accuracy:
-          value.length > 0 ? Math.round((correct / value.length) * 100) : 0,
-        wpm,
+          currentWordLength > 0
+            ? Math.round((currentWordCorrect / currentWordLength) * 100)
+            : 0,
       };
-    });
 
-    // ✅ FIX #2: sentence completion check
-    if (value.length === currentText.length && correct === currentText.length) {
-      loadNextSentence(); // fetch new text, reset input
+      const newWordStats = [...wordStats, completedWordStats];
+      setWordStats(newWordStats);
+
+      // Move to next word - fetch new text from backend
+      const newWordIndex = wordIndex + 1;
+      setWordIndex(newWordIndex);
+
+      // Update stats with completed word count before fetching new text
+      const statsWithCompletedWord = {
+        ...newStats,
+        wordsTyped: newWordIndex + 1,
+        currentWordCharactersTyped: 0,
+        currentWordCharactersCorrect: 0,
+      };
+      setStats(statsWithCompletedWord);
+
+      // Fetch new text from backend
+      fetchRandomText().then((newText) => {
+        if (newText) {
+          setCurrentText(newText);
+          setUserInput("");
+        }
+      });
     }
   };
 
@@ -162,6 +220,18 @@ export function Typing() {
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && gameState === "idle") {
       startGame();
+    }
+
+    // Track pressed key for keyboard visualization
+    if (gameState === "playing") {
+      setPressedKey(e.key);
+    }
+  };
+
+  // Handle key down for better key tracking
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (gameState === "playing") {
+      setPressedKey(e.key);
     }
   };
 
@@ -182,7 +252,7 @@ export function Typing() {
         wpm: stats.wpm,
         accuracy: stats.accuracy,
         wordsTyped: stats.wordsTyped,
-        charactersCorrect: stats.charactersCorrect,
+        charactersCorrect: stats.totalCharactersCorrect,
         timeElapsed,
       });
 
@@ -196,10 +266,13 @@ export function Typing() {
       setCurrentText("");
       setTimeLeft(GAME_DURATION);
       setWordIndex(0);
+      setWordStats([]);
       setStats({
         wordsTyped: 0,
-        charactersTyped: 0,
-        charactersCorrect: 0,
+        totalCharactersTyped: 0,
+        totalCharactersCorrect: 0,
+        currentWordCharactersTyped: 0,
+        currentWordCharactersCorrect: 0,
         wpm: 0,
         accuracy: 0,
       });
@@ -344,6 +417,7 @@ export function Typing() {
                     value={userInput}
                     onChange={handleInputChange}
                     onKeyPress={handleKeyPress}
+                    onKeyDown={handleKeyDown}
                     placeholder="Start typing..."
                     className="text-lg sm:text-xl font-mono"
                     autoFocus
@@ -353,6 +427,16 @@ export function Typing() {
                     Press Enter to start a new word when you complete the
                     current one
                   </p>
+                </CardContent>
+              </Card>
+
+              {/* Keyboard Visualization */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Keyboard</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Keyboard pressedKey={pressedKey} />
                 </CardContent>
               </Card>
             </div>
@@ -391,7 +475,7 @@ export function Typing() {
                   </div>
                   <div className="text-center p-4 bg-muted/50 rounded-lg">
                     <div className="text-3xl font-bold text-primary">
-                      {stats.charactersCorrect}
+                      {stats.totalCharactersCorrect}
                     </div>
                     <div className="text-sm text-muted-foreground mt-1">
                       Correct
