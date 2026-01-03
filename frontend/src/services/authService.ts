@@ -22,6 +22,13 @@ export interface AuthResponse {
   token: string;
 }
 
+export interface UserResponse {
+  id: string;
+  username: string;
+  email: string;
+  score: number;
+}
+
 export const authService = {
   register: async (data: RegisterData): Promise<AuthResponse> => {
     const response = await api.post<AuthResponse>("/api/auth/register", data);
@@ -32,5 +39,8 @@ export const authService = {
     const response = await api.post<AuthResponse>("/api/auth/login", data);
     return response.data;
   },
+  getCurrentUser: async (): Promise<UserResponse> => {
+    const response = await api.get<UserResponse>("/api/auth/me");
+    return response.data;
+  },
 };
-

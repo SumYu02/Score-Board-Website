@@ -217,8 +217,8 @@ export async function submitTypingGameScore(
       return;
     }
 
-    // Calculate score: 1 point per 10 WPM, minimum 1 point if WPM > 0
-    const scorePoints = Math.max(1, Math.floor(wpm / 10));
+    // Calculate score: 1 point per 10 WPM, minimum 100 points if WPM > 0
+    const scorePoints = wpm >= 10 ? Math.floor(wpm / 10) * 100 : 0;
 
     // Update score in a single transaction
     const updatedUser = await prisma.user.update({

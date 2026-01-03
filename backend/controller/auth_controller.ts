@@ -87,7 +87,6 @@ export async function login(req: Request, res: Response): Promise<void> {
   try {
     const { email, password } = req.body;
 
-    // Validation
     if (!email || !password) {
       res.status(400).json({
         error: "Email and password are required",
@@ -95,19 +94,17 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Find user by email
     const user = await prisma.user.findUnique({
       where: { email },
     });
 
     if (!user) {
       res.status(401).json({
-        error: "Invalid email or password",
+        error: "Account not exists. Please register first.",
       });
       return;
     }
 
-    // Check if user is active
     if (!user.isActive) {
       res.status(403).json({
         error: "Account is deactivated",
@@ -115,7 +112,6 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Verify password
     const isPasswordValid = await bcrypt.compare(password, user.passwordHash);
 
     if (!isPasswordValid) {
@@ -125,7 +121,6 @@ export async function login(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // Generate JWT token
     const token = generateToken({
       userId: user.id,
       email: user.email,

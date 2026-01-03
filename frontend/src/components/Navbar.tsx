@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Button } from "./ui/button";
-import { Moon, Sun, Key, User, LogOut } from "lucide-react";
+import { Moon, Sun, Key, User, LogOut, Gamepad2 } from "lucide-react";
 import { useTheme } from "./theme-provider";
 import { useNavigate } from "react-router-dom";
 import { useAuthStore } from "@/store/authStore";
@@ -16,6 +16,7 @@ import {
   DrawerTrigger,
 } from "@/components/ui/drawer";
 import { Card, CardContent } from "./ui/card";
+import { authService } from "@/services/authService";
 
 export function Navbar() {
   const { theme, setTheme } = useTheme();
@@ -54,8 +55,8 @@ export function Navbar() {
       if (isAuthenticated && user) {
         setIsLoadingScore(true);
         try {
-          const response = await scoreService.getCurrentUserScore();
-          setCurrentScore(response.user.score);
+          const response = await authService.getCurrentUser();
+          setCurrentScore(response.score);
 
           // Update auth store with latest score
           const token = localStorage.getItem("token");
@@ -63,7 +64,7 @@ export function Navbar() {
             setAuth(
               {
                 ...user,
-                score: response.user.score,
+                score: response.score,
               },
               token
             );
@@ -195,6 +196,10 @@ export function Navbar() {
             ) : (
               <Key className="h-7 w-7" />
             )}
+          </Button>
+
+          <Button variant="ghost" size="icon" onClick={() => navigate("/game")}>
+            <Gamepad2 className="h-7 w-7" />
           </Button>
 
           <Button
