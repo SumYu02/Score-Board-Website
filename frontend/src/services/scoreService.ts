@@ -57,6 +57,18 @@ export interface CurrentUserScoreResponse {
   };
 }
 
+export interface TypingGameHistoryEntry {
+  id: string;
+  date: string;
+  wpm: number;
+  accuracy: number;
+  wordsTyped: number;
+}
+
+export interface TypingGameHistoryResponse {
+  history: TypingGameHistoryEntry[];
+}
+
 export const scoreService = {
   getLeaderboard: async (): Promise<LeaderboardResponse> => {
     const response = await api.get<LeaderboardResponse>(
@@ -84,6 +96,12 @@ export const scoreService = {
   },
   getCurrentUserScore: async (): Promise<CurrentUserScoreResponse> => {
     const response = await api.get<CurrentUserScoreResponse>("/api/score/me");
+    return response.data;
+  },
+  getTypingGameHistory: async (): Promise<TypingGameHistoryResponse> => {
+    const response = await api.get<TypingGameHistoryResponse>(
+      "/api/score/typing-game/history"
+    );
     return response.data;
   },
 };
