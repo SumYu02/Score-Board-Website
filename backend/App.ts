@@ -33,11 +33,13 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(frontendDistPath));
 
   // Catch all handler: send back React's index.html file for client-side routing
-  app.get("*", (req, res) => {
-    // Don't serve index.html for API routes
-    if (!req.path.startsWith("/api")) {
-      res.sendFile(path.join(frontendDistPath, "index.html"));
+  // Use middleware instead of route for Express 5 compatibility
+  app.use((req, res, next) => {
+    // Don't serve index.html for API routes or health check
+    if (req.path.startsWith("/api") || req.path === "/health") {
+      return next();
     }
+    res.sendFile(path.join(frontendDistPath, "index.html"));
   });
 }
 
