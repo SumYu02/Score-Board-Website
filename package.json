@@ -1,0 +1,11 @@
+{
+  "name": "score-board-website-backend",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install": "cd backend && npm install",
+    "build": "cd backend && npm run build && npm run prisma:generate",
+    "start": "cd backend && npm start",
+    "migrate": "cd backend && npm run prisma:migrate:deploy"
+  }
+}

@@ -291,16 +291,20 @@ export async function getTypingGameHistory(
         const match = log.action.match(
           /TYPING_GAME:(\d+(?:\.\d+)?)WPM:(\d+(?:\.\d+)?)%:(\d+)words/
         );
-        if (!match) {
+        if (!match || !match[1] || !match[2] || !match[3]) {
           return null;
         }
+
+        const wpmStr = match[1];
+        const accuracyStr = match[2];
+        const wordsTypedStr = match[3];
 
         return {
           id: log.id,
           date: log.createdAt,
-          wpm: parseFloat(match[1]),
-          accuracy: parseFloat(match[2]),
-          wordsTyped: parseInt(match[3], 10),
+          wpm: parseFloat(wpmStr),
+          accuracy: parseFloat(accuracyStr),
+          wordsTyped: parseInt(wordsTypedStr, 10),
         };
       })
       .filter((item): item is NonNullable<typeof item> => item !== null);

@@ -29,6 +29,18 @@ export async function getRandomTypingText(
     const randomIndex = Math.floor(Math.random() * activeTexts.length);
     const randomText = activeTexts[randomIndex];
 
+    if (
+      !randomText ||
+      !randomText.id ||
+      !randomText.text ||
+      !randomText.difficulty
+    ) {
+      res.status(404).json({
+        error: "No typing texts available. Please contact administrator.",
+      });
+      return;
+    }
+
     res.json({
       id: randomText.id,
       text: randomText.text,
@@ -39,4 +51,3 @@ export async function getRandomTypingText(
     res.status(500).json({ error: "Internal server error" });
   }
 }
-
