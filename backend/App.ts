@@ -29,7 +29,7 @@ app.get("/health", (req, res) => {
 
 // Serve static files from frontend dist in production
 if (process.env.NODE_ENV === "production") {
-  const frontendDistPath = path.join(__dirname, "../frontend/dist");
+  const frontendDistPath = path.join(__dirname, "../../frontend/dist");
   app.use(express.static(frontendDistPath));
 
   // Catch all handler: send back React's index.html file for client-side routing
