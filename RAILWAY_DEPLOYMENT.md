@@ -1,6 +1,6 @@
-# Railway Deployment Guide
+# Railway Deployment Guide - Backend Only
 
-This guide will help you deploy the Score Board Website to Railway.
+This guide will help you deploy the Score Board Website **Backend API** to Railway.
 
 ## Prerequisites
 
@@ -9,9 +9,7 @@ This guide will help you deploy the Score Board Website to Railway.
 
 ## Deployment Steps
 
-### Option 1: Deploy as a Single Service (Recommended)
-
-This option deploys both backend and frontend together, where the backend serves the frontend static files.
+### Backend API Deployment
 
 #### Step 1: Connect Your Repository
 
@@ -60,32 +58,12 @@ After deployment, you need to run Prisma migrations. You can do this by:
 
 Railway will automatically detect the `nixpacks.toml` file and build your application. The build process will:
 
-1. Install dependencies for both backend and frontend
+1. Install backend dependencies
 2. Generate Prisma client
 3. Build the backend TypeScript code
-4. Build the frontend React application
-5. Start the backend server (which serves the frontend in production)
+4. Start the backend API server
 
-### Option 2: Deploy as Separate Services
-
-If you prefer to deploy backend and frontend separately:
-
-#### Backend Service
-
-1. Create a new service in Railway
-2. Set the **Root Directory** to `backend`
-3. Add environment variables (same as above)
-4. Railway will auto-detect Node.js and build
-
-#### Frontend Service
-
-1. Create a new service in Railway
-2. Set the **Root Directory** to `frontend`
-3. Add environment variable:
-   ```
-   VITE_API_URL=https://your-backend-service.railway.app
-   ```
-4. Use a static site service or configure the build to serve static files
+**Note:** This deployment only includes the backend API. Deploy the frontend separately using a static hosting service like Vercel, Netlify, or Cloudflare Pages, and configure it to point to this backend API URL.
 
 ## Post-Deployment
 
@@ -133,17 +111,11 @@ npm run prisma:seed
 - Ensure PostgreSQL service is running
 - Check that migrations have been run
 
-### Frontend Not Loading
-
-- Verify `NODE_ENV=production` is set
-- Check that frontend build completed successfully
-- Ensure backend is serving static files (check `backend/App.ts`)
-
 ### API Calls Failing
 
-- If deploying as single service, `VITE_API_URL` should be empty or the same domain
-- Check CORS settings in backend
-- Verify backend routes are working via `/health` endpoint
+- Check CORS settings in backend to ensure your frontend domain is allowed
+- Verify backend routes are working via `/health` endpoint or API endpoints
+- Ensure environment variables are set correctly
 
 ## Custom Domain
 

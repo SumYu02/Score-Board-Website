@@ -1,14 +1,11 @@
 {
-  "name": "score-board-website",
+  "name": "score-board-website-backend",
   "version": "1.0.0",
   "private": true,
   "scripts": {
-    "install:backend": "cd backend && npm install",
-    "install:frontend": "cd frontend && npm install",
-    "install:all": "npm run install:backend && npm run install:frontend",
-    "build:backend": "cd backend && npm run build && npm run prisma:generate",
-    "build:frontend": "cd frontend && npm run build",
-    "build": "npm run build:backend && npm run build:frontend",
-    "start": "cd backend && npm start"
+    "install": "cd backend && npm install",
+    "build": "cd backend && npm run build && npm run prisma:generate",
+    "start": "cd backend && npm start",
+    "migrate": "cd backend && npm run prisma:migrate:deploy"
   }
 }
