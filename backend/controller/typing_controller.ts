@@ -29,7 +29,12 @@ export async function getRandomTypingText(
     const randomIndex = Math.floor(Math.random() * activeTexts.length);
     const randomText = activeTexts[randomIndex];
 
-    if (!randomText) {
+    if (
+      !randomText ||
+      !randomText.id ||
+      !randomText.text ||
+      !randomText.difficulty
+    ) {
       res.status(404).json({
         error: "No typing texts available. Please contact administrator.",
       });
