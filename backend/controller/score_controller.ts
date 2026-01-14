@@ -291,7 +291,7 @@ export async function getTypingGameHistory(
         const match = log.action.match(
           /TYPING_GAME:(\d+(?:\.\d+)?)WPM:(\d+(?:\.\d+)?)%:(\d+)words/
         );
-        if (!match) {
+        if (!match || !match[1] || !match[2] || !match[3]) {
           return null;
         }
 
